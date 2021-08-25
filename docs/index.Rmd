@@ -40,8 +40,35 @@ library(fpc)
 
 ### Preparing data for cluster analysis
 ```{r data_prep}
-# isolate clustering variables
-clust_dat <- totscores_mod[ ,c(25:32)]
+## Load data
+load("totscores_modif.Rda") 
+
+### Outlier analysis
+
+out_vec <- totscores_mod[ ,c(24:32)]
+
+mahal <- mahalanobis(
+    out_vec,
+    colMeans(out_vec, na.rm = T),
+    cov(out_vec, use = "pairwise.complete.obs")
+)
+
+
+cutoff <-
+    qchisq(1 - .001, ncol(out_vec))
+
+summary(mahal < cutoff)
+
+noout_dat <- totscores_mod %>% 
+    filter(mahal < cutoff) 
+
+# isolate clustering variables (only school functioning variable)
+
+vars_vec <- names(totscores_mod[ ,c(24, 29:32)])
+
+vars_vec
+
+clust_dat <- noout_dat[ ,vars_vec]
 
 # Standardize the variables
 scaled_dat <- scale(clust_dat)
@@ -49,7 +76,6 @@ scaled_dat <- scale(clust_dat)
 # Compute the dissimilarity matrix
 res.dist <- dist(scaled_dat, method = "euclidean")
 dist_matrix <- as.matrix(res.dist)
-
 ```
 <br>
 
@@ -91,123 +117,6 @@ factoextra::fviz_nbclust(res.nbclust) +
 
 ## Cluster analyses
 
-<br>
-<br>
-
-### Kmeans
-```{r kmeans}
-
-# Computing Kmeans clustering
-set.seed(124)
-km.res <- kmeans(res.dist, 2, nstart = 1500)
-
-# Visualizing kmeans clusters
-fviz_cluster(
-    km.res,
-    data = res.dist,
-    ellipse.type = "euclid",
-    star.plot = T,
-    repel = T,
-    ggtheme = theme_minimal()
-)
-```
-<br>
-
-### K-Medoids
-```{r kmedoids}
-
-# PAM where nb. of cluster is specified
-set.seed(101)
-pam.res <- pam(dist_matrix, 2)
-
-# Visualizing PAM clusters
-fviz_cluster(
-    pam.res,
-    ellipse.type = "t",
-    repel = T,
-    ggtheme = theme_classic()
-)
-
-```
-<br>
-
-### Hierarchical Clustering
-```{r agglo}
-
-res.dist <- dist(scaled_dat, method = "euclidean")
-
-# Create hierarchical tree
-res.hc <- hclust(d = res.dist, method = "ward.D2")
-
-fviz_dend(
-    res.hc,
-    k = 2,
-    cex = .5,
-    color_labels_by_k = T,
-    rect = T)
-
-# Cut the dendrogram into different groups
-grp_hc <- cutree(res.hc, k = 2)
-
-fviz_cluster(
-    list(data = dist_matrix, cluster = grp_hc),
-    ellipse.type = "convex",
-    repel = T,
-    show.clust.cent = F,
-    ggtheme = theme_minimal()
-)
-
-```
-<br>
-
-### Agglomerative Nesting
-```{r agnes}
-
-res.agnes <- agnes(
-    x = dist_matrix,
-    stand = T,
-    method = "ward"
-)
-
-fviz_dend(res.agnes, cez = .6, k = 2)
-
-# Cut the dendrogram into different groups
-grp_agnes <- cutree(res.agnes, k = 2)
-
-fviz_cluster(
-    list(data = dist_matrix, cluster = grp_agnes),
-    ellipse.type = "convex",
-    repel = T,
-    show.clust.cent = F,
-    ggtheme = theme_minimal()
-)
-
-```
-<br>
-
-### Divisive Analysis Clustering
-```{r diana}
-
-res.diana <- diana(x = dist_matrix)
-
-fviz_dend(res.diana, cex = .6, k = 2)
-
-grp_res.diana <- cutree(res.diana, k = 2)
-
-fviz_cluster(
-    list(data = dist_matrix, cluster = grp_res.diana),
-    ellipse.type = "convex",
-    repel = T,
-    show.clust.cent = F,
-    ggtheme = theme_minimal())
-
-# Create a group variable based on clustering
-
-totscores_mod$cluster_res.diana <- grp_res.diana
-
-# Save the variable 
-save(totscores_mod, file = "totscores_w_cluster.Rda")
-```
 <br>
 
 ### Hierarchical K-Means Clustering
@@ -292,19 +201,6 @@ totscores_mod %>%
     theme(axis.text.x = element_text(angle = 90)) +
     theme_bw()
 
-totscores_mod %>% 
-    ggplot(aes(pps_tot, fill = cluster_res.hk)) +
-    geom_histogram(binwidth = .5, alpha = .5) +
-    facet_wrap(~cluster_res.hk, ncol = 1) +
-    theme(axis.text.x = element_text(angle = 90)) + 
-    theme_bw()
-
-totscores_mod %>% 
-    ggplot(aes(pps_tot, fill = cluster_res.diana)) +
-    geom_histogram(binwidth = .5, alpha = .5) +
-    facet_wrap(~cluster_res.diana, ncol = 1) +
-    theme(axis.text.x = element_text(angle = 90)) + 
-    theme_bw()
 ```
 <br>
 <br>
@@ -320,12 +216,91 @@ library(rstatix)
 
 ```{r mean_sd}
 
-sum_stats <- totscores_mod %>% 
-    group_by(cluster_res.hk) %>% 
-    get_summary_stats(type = "mean_sd")
+### Look for differences in perfectionnisme
+totscores_mod %>% 
+    t_test(qpr_pp ~ cluster_res.hk)
 
-sum_stats %>% 
-    select(-n) %>% 
-    print(n = 24)
+totscores_mod %>% 
+    t_test(qpr_rhs ~ cluster_res.hk)
+
+totscores_mod %>% 
+    group_by(cluster_res.hk) %>% 
+    get_summary_stats(qpr_rhs)
+```
+
+Différence significative sur la variable Recherche de hauts standards avec une taille d'effet de : `totscores_mod %>% cohen_d(qpr_rhs ~ cluster_res.hk)`
+
+<br>
+
+```{r mean_sd_gses}
+
+### Look for differences in self-efficacy
+totscores_mod %>%
+    t_test(gses_tot ~ cluster_res.hk)
+
+totscores_mod %>% 
+    group_by(cluster_res.hk) %>% 
+    get_summary_stats(gses_tot)
+```
+
+Différence significative sur la variable Auto efficacité avec une taille d'effet de : `totscores_mod %>% cohen_d(gses_tot ~ cluster_res.hk)`
+
+```{r mean_sd_mpfi}
+
+### Look for differences in psychological flexibility
+totscores_mod %>%
+    t_test(mpfi_tot ~ cluster_res.hk)
+
+totscores_mod %>% 
+    group_by(cluster_res.hk) %>% 
+    get_summary_stats(mpfi_tot)
+```
+
+Différence significative sur la variable Flexibilité psychologique avec une taille d'effet de : `totscores_mod %>% cohen_d(mpfi_tot ~ cluster_res.hk)`
+
+<br>
+<br>
+
+## Exploratory analyses : mean differences based on PPS cutoffs
+<br>
+
+
+```{r pps_cutoffs}
+
+### Create group variable based on cutoffs
+totscores_mod <- totscores_mod %>% 
+    mutate(pps_cutoffs = case_when(
+        pps_tot <= 27 ~ "low", 
+        (pps_tot > 27 & pps_tot <= 39) ~ "medium",
+        (pps_tot > 39) ~ "high")) 
+
+totscores_mod <- totscores_mod %>% 
+    mutate(pps_cutoffs = factor(pps_cutoffs,
+                                levels = c("low", "medium", "high")))
+
+```
+
+
+
+
+```{r pps_cutoffs_mean_diff}
+
+totscores_mod %>%
+    anova_test(mpfi_tot ~ pps_cutoffs)
+
+totscores_mod %>%
+    anova_test(gses_tot ~ pps_cutoffs)
+
+totscores_mod %>%
+    anova_test(qmes_eng_opt ~ pps_cutoffs)
+
+totscores_mod %>%
+    anova_test(qmes_sur_eng_scol ~ pps_cutoffs)
+
+totscores_mod %>%
+    anova_test(qmes_sous_eng_scol ~ pps_cutoffs)
+
+totscores_mod %>%
+    anova_test(ese_tot ~ pps_cutoffs)
 ```
 
