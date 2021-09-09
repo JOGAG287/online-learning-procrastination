@@ -8,7 +8,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = F, warning = F)
+knitr::opts_chunk$set(echo = F, message = F, warning = F)
 ```
 
 <br>
@@ -114,3 +114,13 @@ totscores_mod %>%
     get_summary_stats(qpr_rhs)
 ```
 
+## Exploratory analyses : chi-square
+
+```{r chi_square}
+
+cont_table <- table(totscores_mod$proc_ouv, totscores_mod$pps_cutoffs)
+
+cont_table
+
+chisq.test(totscores_mod$proc_ouv, totscores_mod$pps_cutoffs)
+```

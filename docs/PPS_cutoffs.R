@@ -67,3 +67,18 @@ totscores_mod %>%
 totscores_mod %>% 
     group_by(pps_cutoffs) %>% 
     get_summary_stats(qpr_rhs)
+
+
+cont_table <- table(totscores_mod$proc_ouvert, totscores_mod$pps_cutoffs)
+chisq.test(totscores_mod$proc_ouvert, totscores_mod$pps_cutoffs)
+
+
+expect_fun <- function(x){
+    i = nrow(x)
+    n = ncol(x)
+    expt_table <- as.table(x)
+    expt_table[i] = x[i] * sum(x[, n])
+    }
+
+expect_table <- expect_fun(cont_table)
+expect_table

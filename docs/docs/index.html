@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Joël Gagnon, Ph.D." />
+
+<meta name="date" content="2021-09-09" />
+
+<title>Analyses basées sur les cutoffs du PPS</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cerulean.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.tab('show');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div class="navbar navbar-inverse  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html"></a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">Analyses basées sur les cutoffs du PPS</h1>
+<h4 class="author">Joël Gagnon, Ph.D.</h4>
+<h4 class="date">09/09/2021</h4>
+
+</div>
+
+
+<p><br> <br></p>
+<div id="exploratory-comparisons-between-groups" class="section level1">
+<h1>Exploratory comparisons between groups</h1>
+<p><br></p>
+<div id="import-libraries" class="section level3">
+<h3>Import libraries</h3>
+<p><br></p>
+</div>
+<div id="import-data-files-with-clustering-variable" class="section level3">
+<h3>Import data files with clustering variable</h3>
+<p><br></p>
+</div>
+<div id="create-factor-variables-from-cluster-variables-and-proc_ouvert-variable" class="section level3">
+<h3>Create factor variables from cluster variables and “proc_ouvert” variable</h3>
+<p><br> <br></p>
+</div>
+<div id="visualize-differences-based-on-clustering-variable" class="section level2">
+<h2>Visualize differences based on clustering variable</h2>
+<p><img src="index_files/figure-html/plot-1.png" width="672" /> <br> <br></p>
+</div>
+<div id="exploratory-analyses-mean-differences" class="section level2">
+<h2>Exploratory analyses : mean differences</h2>
+<p><br></p>
+<div id="import-library" class="section level3">
+<h3>Import library</h3>
+<pre><code>## ANOVA Table (type II tests)
+## 
+##        Effect DFn DFd    F     p p&lt;.05   ges
+## 1 pps_cutoffs   2 389 4.74 0.009     * 0.024</code></pre>
+<pre><code>## ANOVA Table (type II tests)
+## 
+##        Effect DFn DFd     F     p p&lt;.05   ges
+## 1 pps_cutoffs   2 389 6.443 0.002     * 0.032</code></pre>
+<pre><code>## ANOVA Table (type II tests)
+## 
+##        Effect DFn DFd     F        p p&lt;.05   ges
+## 1 pps_cutoffs   2 389 25.77 3.09e-11     * 0.117</code></pre>
+<pre><code>## ANOVA Table (type II tests)
+## 
+##        Effect DFn DFd     F     p p&lt;.05   ges
+## 1 pps_cutoffs   2 389 4.123 0.017     * 0.021</code></pre>
+<pre><code>## ANOVA Table (type II tests)
+## 
+##        Effect DFn DFd     F       p p&lt;.05   ges
+## 1 pps_cutoffs   2 389 28.02 4.3e-12     * 0.126</code></pre>
+<pre><code>## ANOVA Table (type II tests)
+## 
+##        Effect DFn DFd     F       p p&lt;.05 ges
+## 1 pps_cutoffs   2 389 21.67 1.2e-09     * 0.1</code></pre>
+<pre><code>## ANOVA Table (type II tests)
+## 
+##        Effect DFn DFd     F     p p&lt;.05   ges
+## 1 pps_cutoffs   2 389 2.981 0.052       0.015</code></pre>
+<pre><code>## ANOVA Table (type II tests)
+## 
+##        Effect DFn DFd     F     p p&lt;.05   ges
+## 1 pps_cutoffs   2 389 3.273 0.039     * 0.017</code></pre>
+<pre><code>## # A tibble: 3 x 14
+##   pps_cutoffs variable     n   min   max median    q1    q3   iqr   mad  mean
+##   &lt;fct&gt;       &lt;chr&gt;    &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+## 1 low         qpr_rhs    137    12    35     30  27      33   6    4.45  29.2
+## 2 medium      qpr_rhs    151    13    35     28  24.5    32   7.5  5.93  27.7
+## 3 high        qpr_rhs    104    12    35     29  25      32   7    5.93  28.2
+## # ... with 3 more variables: sd &lt;dbl&gt;, se &lt;dbl&gt;, ci &lt;dbl&gt;</code></pre>
+</div>
+</div>
+<div id="exploratory-analyses-chi-square" class="section level2">
+<h2>Exploratory analyses : chi-square</h2>
+<pre><code>##                     
+##                      low medium high
+##   À diminué           35     21    7
+##   Demeuré le même     63     33   14
+##   Empiré beaucoup     10     27   45
+##   Empiré quelque peu  29     70   38</code></pre>
+<pre><code>## 
+##  Pearson&#39;s Chi-squared test
+## 
+## data:  totscores_mod$proc_ouv and totscores_mod$pps_cutoffs
+## X-squared = 90, df = 6, p-value &lt;2e-16</code></pre>
+</div>
+</div>
+
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

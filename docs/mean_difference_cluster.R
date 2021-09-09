@@ -10,20 +10,32 @@ library(ggplot2)
 ## Load data
 load(file = "totscores_w_cluster.Rda")
 
+totscores_mod <- noout_dat
+
 
 ## Factorize proc_ouvert and cluster variables
 
 totscores_mod <- totscores_mod %>% 
     mutate(cluster_res.hk = factor(cluster_res.hk,
                             labels = c("1", "2"))) %>% 
-    mutate(cluster_res.diana = factor(cluster_res.diana,
-                                      labels = c("1", "2"))) %>% 
     mutate(proc_ouv = factor(proc_ouvert,
-                             labels = c("Ã€ diminuÃ©",
-                                        "DemeurÃ© le mÃªme",
-                                        "EmpirÃ© beaucoup",
-                                        "EmpirÃ© quelque peu")))
+                             labels = c("À diminué",
+                                        "Demeuré le même",
+                                        "Empiré beaucoup",
+                                        "Empiré quelque peu")))
 str(totscores_mod)
+
+
+totscores_mod <- totscores_mod %>% 
+    mutate(pps_cutoffs = dplyr::case_when(
+        pps_tot <= 27 ~ "low", 
+        (pps_tot > 27 & pps_tot <= 39) ~ "medium",
+        (pps_tot > 39) ~ "high")) 
+
+totscores_mod <- totscores_mod %>% 
+    mutate(pps_cutoffs = factor(pps_cutoffs,
+                                levels = c("low", "medium", "high")))
+
 
 ### Look for proc_ouvert differences
 
@@ -164,3 +176,10 @@ totscores_mod %>%
 
 totscores_mod %>% 
     anova_test(qpr_rhs ~ cluster_proc)
+
+
+
+#### Analyse du chi-carré
+cont_table <- table(totscores_mod$proc_ouv, totscores_mod$pps_cutoffs)
+
+chisq.test(totscores_mod$proc_ouv, totscores_mod$pps_cutoffs)
