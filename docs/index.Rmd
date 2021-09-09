@@ -18,21 +18,17 @@ knitr::opts_chunk$set(echo = F, message = F, warning = F)
 
 <br>
 
-### Import libraries
-
 ```{r library}
 library(tidyverse)
 library(ggplot2)
 ```
 <br>
 
-### Import data files with clustering variable
 ```{r import data}
 load(file = "totscores_w_cluster.Rda")
 ```
 <br>
 
-### Create factor variables from cluster variables and "proc_ouvert" variable
 ```{r data wrangling}
 
 totscores_mod <- noout_dat %>% 
@@ -77,7 +73,6 @@ totscores_mod %>%
 ## Exploratory analyses : mean differences
 <br>
 
-### Import library
 ```{r import_lib3}
 library(rstatix)
 ```
