@@ -78,36 +78,58 @@ library(rstatix)
 ```
 
 
-```{r mean_sd}
+MPFI
+```{r mpfi}
 
 totscores_mod %>%
     anova_test(mpfi_tot ~ pps_cutoffs)
+```
+
+
+GSES
+```{r gses}
 
 totscores_mod %>%
     anova_test(gses_tot ~ pps_cutoffs)
+```
 
+QMES ENG OPT
+```{r qmes_eng_opt}
 totscores_mod %>%
     anova_test(qmes_eng_opt ~ pps_cutoffs)
+```
 
+QMES SR ENG SCOL
+```{r qmes_sur_eng_scol}
 totscores_mod %>%
     anova_test(qmes_sur_eng_scol ~ pps_cutoffs)
+```
 
+QMES SOUS ENG SCOL
+
+```{r qmes_sous_eng}
 totscores_mod %>%
     anova_test(qmes_sous_eng_scol ~ pps_cutoffs)
+```
 
+ESE
+```{r ese}
 totscores_mod %>%
     anova_test(ese_tot ~ pps_cutoffs)
+```
 
+PREOCU PERF
+```{r pp}
 totscores_mod %>% 
     anova_test(qpr_pp ~ pps_cutoffs)
+```
 
+RECH HAUTS STAND
+````{r rhs}
 totscores_mod %>% 
     anova_test(qpr_rhs ~ pps_cutoffs)
-
-totscores_mod %>% 
-    group_by(pps_cutoffs) %>% 
-    get_summary_stats(qpr_rhs)
 ```
+
 
 ## Exploratory analyses : chi-square
 
