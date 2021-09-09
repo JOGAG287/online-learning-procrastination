@@ -1,0 +1,299 @@
+---
+title: "Exploratory analyses on procrastination data using cluster analysis"
+output: 
+  html_document:
+    toc: FALSE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = F, warning = F)
+```
+
+<br>
+<br>
+
+# Cluster analysis
+
+<br>
+
+### Import data
+```{r import_dat}
+load("totscores_w_cluster.Rda")
+```
+
+
+```{r import_lib}
+library(cluster)
+library(factoextra)
+library(GGally)
+library(tidyr)
+library(plotly)
+library(NbClust)
+library(clValid)
+library(dendextend)
+library(purrr)
+library(psych)
+library(car)
+library(fpc)
+```
+<br>
+
+### Preparing data for cluster analysis
+```{r data_prep}
+## Load data
+load("totscores_modif.Rda") 
+
+### Outlier analysis
+
+out_vec <- totscores_mod[ ,c(24:32)]
+
+mahal <- mahalanobis(
+    out_vec,
+    colMeans(out_vec, na.rm = T),
+    cov(out_vec, use = "pairwise.complete.obs")
+)
+
+
+cutoff <-
+    qchisq(1 - .001, ncol(out_vec))
+
+summary(mahal < cutoff)
+
+noout_dat <- totscores_mod %>% 
+    filter(mahal < cutoff) 
+
+# isolate clustering variables (only school functioning variable)
+
+vars_vec <- names(totscores_mod[ ,c(24, 29:32)])
+
+vars_vec
+
+clust_dat <- noout_dat[ ,vars_vec]
+
+# Standardize the variables
+scaled_dat <- scale(clust_dat)
+
+# Compute the dissimilarity matrix
+res.dist <- dist(scaled_dat, method = "euclidean")
+dist_matrix <- as.matrix(res.dist)
+```
+<br>
+
+### Compare estimation methods
+```{r compare}
+m <- c( "average", "single", "complete", "ward")
+names(m) <- c( "average", "single", "complete", "ward")
+
+# function to compute coefficient
+ac <- function(x) {
+    agnes(scaled_dat, method = x)$ac
+}
+
+map_dbl(m, ac)
+```
+
+The analysis shows the superiority of the Ward method in this case.
+
+<br>
+
+### Determining the optimal number of clusters
+
+```{r nb_clust}
+res.nbclust <-
+    NbClust(
+        scaled_dat,
+        distance = "euclidean",
+        min.nc = 2,
+        max.nc = 9,
+        method = "complete",
+        index = "all"
+    )
+
+factoextra::fviz_nbclust(res.nbclust) + 
+    theme_minimal() + 
+    ggtitle("NbClust's optimal number of clusters")
+```
+
+
+## Cluster analyses
+
+<br>
+
+### Hierarchical K-Means Clustering
+```{r hkmeans}
+
+res.hk <- hkmeans(dist_matrix, 2)
+
+# Visualize the hkmeans final clusters
+fviz_cluster(
+    res.hk,
+    cex = .6,
+    palette = "jco",
+    repel = T,
+    ggtheme = theme_classic()
+)
+
+# Visualize the tree
+fviz_dend(res.hk, cex = 0.6, palette = "jco",
+          rect = TRUE, rect_border = "jco", rect_fill = TRUE)
+
+# Create a group variable based on clustering
+grp_res.hk <- res.hk$cluster
+noout_dat$cluster_res.hk <- grp_res.hk
+
+# Save the grouping variable
+save(noout_dat, file = "totscores_w_cluster.Rda")
+
+```
+<br>
+<br>
+
+# Exploratory comparisons between clusters 
+
+<br>
+
+### Import libraries
+
+```{r library}
+library(tidyverse)
+library(ggplot2)
+```
+<br>
+
+### Import data files with clustering variable
+```{r import data}
+load(file = "totscores_w_cluster.Rda")
+```
+<br>
+
+### Create factor variables from cluster variables and "proc_ouvert" variable
+```{r data wrangling}
+
+totscores_mod <- noout_dat %>% 
+    mutate(cluster_res.hk = factor(cluster_res.hk,
+                            labels = c("1", "2"))) %>% 
+    mutate(proc_ouv = factor(proc_ouvert,
+                             labels = c("À diminué",
+                                        "Demeuré le même",
+                                        "Empiré beaucoup",
+                                        "Empiré quelque peu")))
+```
+<br>
+<br>
+
+## Visualize differences based on clustering variable
+
+```{r plot}
+
+totscores_mod %>% 
+    ggplot(aes(proc_ouv, fill = cluster_res.hk)) +
+    geom_histogram(stat = "count", binwidth = .5, alpha = .5) +
+    facet_wrap(~cluster_res.hk, ncol = 1) +
+    theme(axis.text.x = element_text(angle = 90)) +
+    theme_bw()
+
+
+
+```
+<br>
+<br>
+
+## Exploratory analyses : mean differences
+<br>
+
+### Import library
+```{r import_lib3}
+library(rstatix)
+```
+
+
+```{r mean_sd}
+
+### Look for differences in perfectionnisme
+totscores_mod %>% 
+    t_test(qpr_pp ~ cluster_res.hk)
+
+totscores_mod %>% 
+    t_test(qpr_rhs ~ cluster_res.hk)
+
+totscores_mod %>% 
+    group_by(cluster_res.hk) %>% 
+    get_summary_stats(qpr_rhs)
+```
+
+Différence significative sur la variable Recherche de hauts standards avec une taille d'effet de : `totscores_mod %>% cohen_d(qpr_rhs ~ cluster_res.hk)`
+
+<br>
+
+```{r mean_sd_gses}
+
+### Look for differences in self-efficacy
+totscores_mod %>%
+    t_test(gses_tot ~ cluster_res.hk)
+
+totscores_mod %>% 
+    group_by(cluster_res.hk) %>% 
+    get_summary_stats(gses_tot)
+```
+
+Différence significative sur la variable Auto efficacité avec une taille d'effet de : `totscores_mod %>% cohen_d(gses_tot ~ cluster_res.hk)`
+
+```{r mean_sd_mpfi}
+
+### Look for differences in psychological flexibility
+totscores_mod %>%
+    t_test(mpfi_tot ~ cluster_res.hk)
+
+totscores_mod %>% 
+    group_by(cluster_res.hk) %>% 
+    get_summary_stats(mpfi_tot)
+```
+
+Différence significative sur la variable Flexibilité psychologique avec une taille d'effet de : `totscores_mod %>% cohen_d(mpfi_tot ~ cluster_res.hk)`
+
+<br>
+<br>
+
+## Exploratory analyses : mean differences based on PPS cutoffs
+<br>
+
+
+```{r pps_cutoffs}
+
+### Create group variable based on cutoffs
+totscores_mod <- totscores_mod %>% 
+    mutate(pps_cutoffs = case_when(
+        pps_tot <= 27 ~ "low", 
+        (pps_tot > 27 & pps_tot <= 39) ~ "medium",
+        (pps_tot > 39) ~ "high")) 
+
+totscores_mod <- totscores_mod %>% 
+    mutate(pps_cutoffs = factor(pps_cutoffs,
+                                levels = c("low", "medium", "high")))
+
+```
+
+
+
+
+```{r pps_cutoffs_mean_diff}
+
+totscores_mod %>%
+    anova_test(mpfi_tot ~ pps_cutoffs)
+
+totscores_mod %>%
+    anova_test(gses_tot ~ pps_cutoffs)
+
+totscores_mod %>%
+    anova_test(qmes_eng_opt ~ pps_cutoffs)
+
+totscores_mod %>%
+    anova_test(qmes_sur_eng_scol ~ pps_cutoffs)
+
+totscores_mod %>%
+    anova_test(qmes_sous_eng_scol ~ pps_cutoffs)
+
+totscores_mod %>%
+    anova_test(ese_tot ~ pps_cutoffs)
+```
+

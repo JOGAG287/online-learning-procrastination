@@ -1,43 +1,15 @@
----
-title: "Analyses basées sur les cutoffs du PPS"
-author: "Joël Gagnon, Ph.D."
-date: "09/09/2021"
-output: 
-  html_document:
-    toc: FALSE
----
+# Cluster based on PPS cutoffs --------------------------------------------
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = F, warning = F)
-```
-
-<br>
-<br>
-
-# Exploratory comparisons between groups 
-
-<br>
-
-### Import libraries
-
-```{r library}
-library(tidyverse)
-library(ggplot2)
-```
-<br>
-
-### Import data files with clustering variable
-```{r import data}
 load(file = "totscores_w_cluster.Rda")
-```
-<br>
 
-### Create factor variables from cluster variables and "proc_ouvert" variable
-```{r data wrangling}
 
-totscores_mod <- noout_dat %>% 
+totscores_mod <- noout_dat
+
+## Factorize proc_ouvert and cluster variables
+
+totscores_mod <- totscores_mod %>% 
     mutate(cluster_res.hk = factor(cluster_res.hk,
-                            labels = c("1", "2"))) %>% 
+                                   labels = c("1", "2"))) %>% 
     mutate(proc_ouv = factor(proc_ouvert,
                              labels = c("À diminué",
                                         "Demeuré le même",
@@ -45,6 +17,7 @@ totscores_mod <- noout_dat %>%
                                         "Empiré quelque peu")))
 
 ### Create group variable based on cutoffs
+
 
 totscores_mod <- totscores_mod %>% 
     mutate(pps_cutoffs = dplyr::case_when(
@@ -56,34 +29,7 @@ totscores_mod <- totscores_mod %>%
     mutate(pps_cutoffs = factor(pps_cutoffs,
                                 levels = c("low", "medium", "high")))
 
-```
-<br>
-<br>
 
-## Visualize differences based on clustering variable
-
-```{r plot}
-totscores_mod %>% 
-    ggplot(aes(proc_ouv, fill = pps_cutoffs)) +
-    geom_histogram(stat = "count", binwidth = .5, alpha = .5) +
-    facet_wrap(~pps_cutoffs, ncol = 1) +
-    theme(axis.text.x = element_text(angle = 90))
-
-
-```
-<br>
-<br>
-
-## Exploratory analyses : mean differences
-<br>
-
-### Import library
-```{r import_lib3}
-library(rstatix)
-```
-
-
-```{r mean_sd}
 
 totscores_mod %>%
     anova_test(mpfi_tot ~ pps_cutoffs)
@@ -103,6 +49,15 @@ totscores_mod %>%
 totscores_mod %>%
     anova_test(ese_tot ~ pps_cutoffs)
 
+
+totscores_mod %>% 
+    ggplot(aes(proc_ouv, fill = pps_cutoffs)) +
+    geom_histogram(stat = "count", binwidth = .5, alpha = .5) +
+    facet_wrap(~pps_cutoffs, ncol = 1) +
+    theme(axis.text.x = element_text(angle = 90))
+
+
+### Look for differences in perfectionnisme
 totscores_mod %>% 
     anova_test(qpr_pp ~ pps_cutoffs)
 
@@ -112,5 +67,3 @@ totscores_mod %>%
 totscores_mod %>% 
     group_by(pps_cutoffs) %>% 
     get_summary_stats(qpr_rhs)
-```
-
