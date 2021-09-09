@@ -74,11 +74,11 @@ chisq.test(totscores_mod$proc_ouvert, totscores_mod$pps_cutoffs)
 
 
 expect_fun <- function(x){
-    i = nrow(x)
-    n = ncol(x)
-    expt_table <- as.table(x)
-    expt_table[i] = x[i] * sum(x[, n])
-    }
+    expt_table = x[1] * sum(x[, 1])
+    return(table(expt_table))
+}
+   
+expt_table = xx[1] * sum()
 
-expect_table <- expect_fun(cont_table)
-expect_table
+expect_fun(xy)
+test
